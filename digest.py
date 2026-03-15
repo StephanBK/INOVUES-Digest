@@ -139,85 +139,30 @@ def search_with_claude(query: str) -> list[dict]:
 
 
 
-def fetch_batch(queries, batch_num, total):
-    """Fetch multiple search topics in a single Claude web search call."""
-    query_list = "\n".join([f"- {q['source']}: {q['query']}" for q in queries])
-    try:
-        r = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json"
-            },
-            json={
-                "model": "claude-haiku-4-5",
-                "max_tokens": 3000,
-                "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                "messages": [{
-                    "role": "user",
-                    "content": f"""Search the web for recent news on each of these topics and return a JSON array.
-For each topic find 2-3 relevant articles from the past 7 days.
-
-Topics:
-{query_list}
-
-Return ONLY a JSON array like:
-[{{"title": "...", "url": "...", "snippet": "...", "source_name": "exact topic label from above"}}]"""
-                }]
-            },
-            timeout=60
-        )
-        r.raise_for_status()
-        for block in r.json().get("content", []):
-            if block.get("type") == "text":
-                text = block["text"].strip()
-                # Try to extract JSON array
-                if "[" in text and "]" in text:
-                    try:
-                        start_idx = text.index("[")
-                        end_idx = text.rindex("]") + 1
-                        return json.loads(text[start_idx:end_idx])
-                    except:
-                        pass
-    except Exception as e:
-        print(f"    Batch {batch_num} error: {e}")
-    return []
-
-
 def fetch_all() -> list[dict]:
     all_articles = []
-    seen_urls = set()
+    seen_urls    = set()
 
-    batch_size = 5
-    batches = [SEARCH_QUERIES[i:i+batch_size] for i in range(0, len(SEARCH_QUERIES), batch_size)]
-
-    for i, batch in enumerate(batches):
-        names = ", ".join([q["source"] for q in batch])
-        print(f"  Batch {i+1}/{len(batches)}: {names}")
-        results = fetch_batch(batch, i+1, len(batches))
-        print(f"    -> {len(results)} results")
-        time.sleep(8)
+    for target in SEARCH_QUERIES:
+        print(f"  [{target['category']}] {target['source']}")
+        results = search_with_claude(target["query"])
+        time.sleep(15)  # 15s gap — avoids all 429s even back to back
 
         for res in results:
             url = res.get("url", "")
             if url and url not in seen_urls:
                 seen_urls.add(url)
-                source_name = res.get("source_name", batch[0]["source"])
-                category = batch[0]["category"]
-                for q in batch:
-                    if q["source"].lower() in source_name.lower() or source_name.lower() in q["source"].lower():
-                        category = q["category"]
-                        break
                 all_articles.append({
-                    "category": category,
-                    "source_name": source_name,
-                    "title": res.get("title", ""),
-                    "url": url,
-                    "snippet": res.get("snippet", ""),
+                    "category":    target["category"],
+                    "source_name": target["source"],
+                    "title":       res.get("title", ""),
+                    "url":         url,
+                    "snippet":     res.get("snippet", ""),
                 })
 
-    print(f"\n  TOTAL: {len(all_articles)} unique articles")
+        print(f"    -> {len(results)} results")
+
+    print(f"  TOTAL: {len(all_articles)} unique articles")
     return all_articles
 
 def curate_with_claude(articles: list[dict]) -> dict:
