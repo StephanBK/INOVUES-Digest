@@ -24,9 +24,8 @@ GMAIL_USER        = os.environ["GMAIL_USER"]
 GMAIL_APP_PASS    = os.environ["GMAIL_APP_PASS"]
 RECIPIENTS        = os.environ.get("RECIPIENTS", GMAIL_USER).split(",")
 
-# Date range: last 7 days
-TODAY     = datetime.now().strftime("%B %d, %Y")
-WEEK_AGO  = (datetime.now() - timedelta(days=7)).strftime("%B %d, %Y")
+TODAY    = datetime.now().strftime("%B %d, %Y")
+WEEK_AGO = (datetime.now() - timedelta(days=7)).strftime("%B %d, %Y")
 
 INOVUES_CONTEXT = """
 INOVUES installs secondary window retrofit systems on commercial buildings in NYC and New England.
@@ -43,46 +42,31 @@ Key interests:
 - New England building energy policy and programs
 """
 
-# ── Search targets ─────────────────────────────────────────────────────────────
 SEARCH_QUERIES = [
-    # Competitors — LinkedIn + website
-    {"category": "Competitors",           "source": "Indow Window",              "query": f'site:linkedin.com/company/indow-windows OR site:indowwindows.com news updates {WEEK_AGO}'},
-    {"category": "Competitors",           "source": "Alpen Windows",             "query": f'site:linkedin.com/company/alpen-high-performance-products OR site:alpenwp.com news {WEEK_AGO}'},
-
-    # Utilities — LinkedIn + press releases
-    {"category": "Utilities",             "source": "Con Edison",                "query": f'Con Edison commercial building energy rebate program announcement {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "NYSERDA",                   "query": f'NYSERDA commercial building energy efficiency incentive program {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "National Grid",             "query": f'National Grid commercial building rebate energy efficiency {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "Eversource",                "query": f'Eversource commercial building energy efficiency program rebate {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "PSEG Long Island",          "query": f'PSEG Long Island commercial energy program incentive {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "NY Power Authority",        "query": f'NYPA New York Power Authority commercial building clean energy {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "Avangrid / NYSEG",          "query": f'Avangrid NYSEG commercial building energy program New York {WEEK_AGO}'},
-    {"category": "Utilities",             "source": "Unitil",                    "query": f'Unitil commercial energy efficiency program New England {WEEK_AGO}'},
-
-    # City agencies
-    {"category": "Policy & Regulations",  "source": "NYC Local Law 97",          "query": f'NYC Local Law 97 building compliance fine enforcement update {WEEK_AGO}'},
-    {"category": "Policy & Regulations",  "source": "NYC Dept of Buildings",     "query": f'NYC DOB building energy retrofit regulation announcement {WEEK_AGO}'},
-    {"category": "Policy & Regulations",  "source": "Boston BERDO",              "query": f'Boston BERDO building energy reporting compliance update {WEEK_AGO}'},
-    {"category": "Policy & Regulations",  "source": "NYC Climate Office",        "query": f'NYC Mayor climate office building decarbonization announcement {WEEK_AGO}'},
-
-    # Industry publications
-    {"category": "Industry Publications", "source": "The Real Deal NYC",         "query": f'site:therealdeal.com building retrofit energy renovation {WEEK_AGO}'},
-    {"category": "Industry Publications", "source": "Bisnow",                    "query": f'site:bisnow.com NYC building energy retrofit facade renovation {WEEK_AGO}'},
-    {"category": "Industry Publications", "source": "GreenBiz",                  "query": f'site:greenbiz.com commercial building energy efficiency retrofit {WEEK_AGO}'},
-    {"category": "Industry Publications", "source": "ENR",                       "query": f'site:enr.com NYC building retrofit renovation energy {WEEK_AGO}'},
-    {"category": "Industry Publications", "source": "Commercial Property Exec",  "query": f'site:cpexecutive.com building energy retrofit renovation {WEEK_AGO}'},
-    {"category": "Industry Publications", "source": "Propmodo",                  "query": f'site:propmodo.com building energy efficiency retrofit {WEEK_AGO}'},
-
-    # Market intelligence
-    {"category": "Market Intelligence",   "source": "Office Conversions",        "query": f'NYC office to residential hotel conversion project announced {WEEK_AGO}'},
-    {"category": "Market Intelligence",   "source": "Building Retrofits",        "query": f'commercial building facade window energy retrofit project NYC New England {WEEK_AGO}'},
-    {"category": "Market Intelligence",   "source": "Decarbonization",           "query": f'commercial building decarbonization retrofit project announced New York {WEEK_AGO}'},
+    {"category": "Competitors",           "source": "Indow Window",             "query": "Indow Window news updates 2025 2026"},
+    {"category": "Competitors",           "source": "Alpen Windows",            "query": "Alpen High Performance Windows news 2025 2026"},
+    {"category": "Utilities",             "source": "Con Edison",               "query": "Con Edison commercial building energy rebate program 2025 2026"},
+    {"category": "Utilities",             "source": "NYSERDA",                  "query": "NYSERDA commercial building energy efficiency incentive 2025 2026"},
+    {"category": "Utilities",             "source": "National Grid",            "query": "National Grid commercial building rebate energy 2025 2026"},
+    {"category": "Utilities",             "source": "Eversource",               "query": "Eversource commercial building energy efficiency rebate 2025 2026"},
+    {"category": "Utilities",             "source": "PSEG Long Island",         "query": "PSEG Long Island commercial energy incentive program 2026"},
+    {"category": "Utilities",             "source": "NY Power Authority",       "query": "NYPA commercial building clean energy program 2026"},
+    {"category": "Policy & Regulations",  "source": "NYC Local Law 97",         "query": "NYC Local Law 97 building compliance fine enforcement 2026"},
+    {"category": "Policy & Regulations",  "source": "NYC Dept of Buildings",    "query": "NYC DOB building energy retrofit regulation 2026"},
+    {"category": "Policy & Regulations",  "source": "Boston BERDO",             "query": "Boston BERDO building energy reporting compliance 2026"},
+    {"category": "Industry Publications", "source": "The Real Deal NYC",        "query": "site:therealdeal.com building retrofit energy renovation"},
+    {"category": "Industry Publications", "source": "GreenBiz",                 "query": "site:greenbiz.com commercial building energy efficiency retrofit"},
+    {"category": "Industry Publications", "source": "ENR",                      "query": "site:enr.com building retrofit renovation energy efficiency"},
+    {"category": "Industry Publications", "source": "Commercial Property Exec", "query": "site:cpexecutive.com building energy retrofit renovation"},
+    {"category": "Industry Publications", "source": "Propmodo",                 "query": "site:propmodo.com building energy efficiency retrofit"},
+    {"category": "Market Intelligence",   "source": "Office Conversions",       "query": "NYC office to residential hotel conversion project 2026"},
+    {"category": "Market Intelligence",   "source": "Building Retrofits",       "query": "commercial building facade window energy retrofit NYC 2026"},
+    {"category": "Market Intelligence",   "source": "Decarbonization",          "query": "commercial building decarbonization retrofit New York 2026"},
 ]
 
 
-# ── Claude web search fetch ────────────────────────────────────────────────────
 def search_with_claude(query: str) -> list[dict]:
-    """Use Claude with web_search tool to find articles."""
+    """Use Claude with web_search tool. Robustly parse whatever comes back."""
     try:
         r = requests.post(
             "https://api.anthropic.com/v1/messages",
@@ -93,64 +77,94 @@ def search_with_claude(query: str) -> list[dict]:
             },
             json={
                 "model": "claude-haiku-4-5",
-                "max_tokens": 1000,
+                "max_tokens": 1500,
                 "tools": [{"type": "web_search_20250305", "name": "web_search"}],
                 "messages": [{
                     "role": "user",
-                    "content": f"""Search for this and return results as JSON array only, no other text:
-Query: {query}
-
-Return a JSON array of up to 4 results:
-[{{"title": "...", "url": "...", "snippet": "...", "date": "..."}}]
-If no results found return: []"""
+                    "content": f"Search the web for: {query}\n\nAfter searching, list the top 3-4 results you found as a JSON array with fields: title, url, snippet. Return ONLY the JSON array, nothing else."
                 }]
             },
-            timeout=30
+            timeout=45
         )
         r.raise_for_status()
-        content_blocks = r.json().get("content", [])
-        for block in content_blocks:
+        blocks = r.json().get("content", [])
+
+        # Try to find a text block with JSON
+        for block in blocks:
             if block.get("type") == "text":
                 text = block["text"].strip()
-                if text.startswith("```"):
-                    text = text.split("```")[1]
-                    if text.startswith("json"):
-                        text = text[4:]
-                text = text.strip()
-                if text.startswith("["):
-                    return json.loads(text)
+                # Strip markdown fences
+                if "```" in text:
+                    parts = text.split("```")
+                    for part in parts:
+                        part = part.strip()
+                        if part.startswith("json"):
+                            part = part[4:].strip()
+                        if part.startswith("["):
+                            try:
+                                return json.loads(part)
+                            except:
+                                pass
+                # Try direct parse
+                if "[" in text:
+                    start = text.index("[")
+                    end   = text.rindex("]") + 1
+                    try:
+                        return json.loads(text[start:end])
+                    except:
+                        pass
+
+        # If no JSON found, extract from tool_result blocks
+        for block in blocks:
+            if block.get("type") == "tool_result":
+                for sub in block.get("content", []):
+                    if sub.get("type") == "text":
+                        try:
+                            data = json.loads(sub["text"])
+                            results = []
+                            for item in data.get("results", data if isinstance(data, list) else []):
+                                results.append({
+                                    "title":   item.get("title", ""),
+                                    "url":     item.get("url", ""),
+                                    "snippet": item.get("description", item.get("snippet", ""))
+                                })
+                            if results:
+                                return results
+                        except:
+                            pass
+
     except Exception as e:
-        print(f"    Search error: {e}")
+        print(f"    ⚠ Error: {e}")
     return []
 
 
 def fetch_all() -> list[dict]:
     all_articles = []
-    seen_urls = set()
+    seen_urls    = set()
 
     for target in SEARCH_QUERIES:
         print(f"  [{target['category']}] {target['source']}")
         results = search_with_claude(target["query"])
-        time.sleep(0.5)  # gentle rate limiting
+        time.sleep(0.3)
 
-        for r in results:
-            url = r.get("url", "")
+        for res in results:
+            url = res.get("url", "")
             if url and url not in seen_urls:
                 seen_urls.add(url)
                 all_articles.append({
-                    "category": target["category"],
+                    "category":    target["category"],
                     "source_name": target["source"],
-                    "title": r.get("title", ""),
-                    "url": url,
-                    "snippet": r.get("snippet", ""),
-                    "date": r.get("date", ""),
+                    "title":       res.get("title", ""),
+                    "url":         url,
+                    "snippet":     res.get("snippet", ""),
                 })
 
-    print(f"  → {len(all_articles)} unique articles found")
+        print(f"    → {len(results)} results")
+
+    print(f"\n  TOTAL: {len(all_articles)} unique articles")
     return all_articles
 
 
-# ── Claude curation ────────────────────────────────────────────────────────────
 def curate_with_claude(articles: list[dict]) -> dict:
     articles_text = json.dumps(articles, indent=2)
 
@@ -163,13 +177,14 @@ Here are articles found this week ({WEEK_AGO} to {TODAY}):
 
 Instructions:
 1. Include ANY article relevant to: building retrofits, window/facade upgrades, energy efficiency programs, LL97/BERDO compliance, office conversions, utility incentive programs, competitor activity, commercial real estate renovations, building decarbonization
-2. Be INCLUSIVE — if there's any angle for INOVUES include it
-3. Only skip articles completely unrelated to buildings/energy
-4. For each article write a sharp "INOVUES angle" — business implication in 1-2 sentences
-5. Score 1-10: 10=direct sales lead, 7-9=strong opportunity, 4-6=useful intel, 1-3=background awareness
+2. Be INCLUSIVE — if there is any angle for INOVUES, include it
+3. Only skip articles that are 100% unrelated to buildings or energy
+4. For each article write a sharp "INOVUES angle" — what is the business implication in 1-2 sentences
+5. Score 1-10: 10=direct sales lead or urgent action, 7-9=strong opportunity, 4-6=useful intel, 1-3=background awareness
 6. Write one punchy headline summary for the whole digest
+7. You MUST include at least 5 stories — if fewer than 5 are clearly relevant, include the next most relevant ones anyway
 
-Return ONLY valid JSON (no markdown):
+Return ONLY valid JSON (no markdown fences):
 {{
   "date": "Week of {WEEK_AGO} — {TODAY}",
   "headline_summary": "one punchy sentence summarizing the week for INOVUES",
@@ -182,7 +197,7 @@ Return ONLY valid JSON (no markdown):
           "source_name": "source",
           "title": "title",
           "url": "url",
-          "insight": "INOVUES angle",
+          "insight": "INOVUES angle in 1-2 sentences",
           "score": 7
         }}
       ]
@@ -198,14 +213,24 @@ Return ONLY valid JSON (no markdown):
     )
     r.raise_for_status()
     content = r.json()["content"][0]["text"].strip()
-    if content.startswith("```"):
-        content = content.split("```")[1]
-        if content.startswith("json"):
-            content = content[4:]
-    return json.loads(content.strip())
+    if "```" in content:
+        parts = content.split("```")
+        for part in parts:
+            part = part.strip()
+            if part.startswith("json"):
+                part = part[4:].strip()
+            if part.startswith("{"):
+                try:
+                    return json.loads(part)
+                except:
+                    pass
+    if "{" in content:
+        start = content.index("{")
+        end   = content.rindex("}") + 1
+        return json.loads(content[start:end])
+    return json.loads(content)
 
 
-# ── Build HTML ─────────────────────────────────────────────────────────────────
 def build_html(digest: dict) -> str:
     date_str   = digest.get("date", f"Week of {WEEK_AGO}")
     headline   = digest.get("headline_summary", "Your weekly INOVUES intelligence briefing.")
@@ -248,7 +273,7 @@ def build_html(digest: dict) -> str:
         </td></tr>"""
 
     if not cats_html:
-        cats_html = '<tr><td style="padding:32px 0;color:#aaa;font-size:14px;text-align:center;">No stories found this week.</td></tr>'
+        cats_html = '<tr><td style="padding:32px 0;color:#aaa;font-size:14px;text-align:center;">No stories found this week — check logs for errors.</td></tr>'
 
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
@@ -286,7 +311,6 @@ def build_html(digest: dict) -> str:
 </body></html>"""
 
 
-# ── Send Email ─────────────────────────────────────────────────────────────────
 def send_email(html: str, subject: str):
     msg = MIMEMultipart("related")
     msg["From"]    = f"INOVUES Intelligence <{GMAIL_USER}>"
@@ -312,16 +336,15 @@ def send_email(html: str, subject: str):
     print(f"✅ Sent to {', '.join(RECIPIENTS)}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
 def main():
     print(f"🏢 INOVUES Weekly Digest — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print(f"📅 Covering: {WEEK_AGO} → {TODAY}")
-    print("🔍 Searching with Claude...")
+    print("🔍 Searching with Claude web search...")
     articles = fetch_all()
 
-    print("🤖 Curating...")
+    print("\n🤖 Curating with Claude...")
     digest = curate_with_claude(articles)
-    total = sum(len(c.get("stories", [])) for c in digest.get("categories", []))
+    total  = sum(len(c.get("stories", [])) for c in digest.get("categories", []))
     print(f"   → {total} stories selected")
 
     print("🎨 Building email...")
