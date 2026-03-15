@@ -296,7 +296,8 @@ def send_email(html: str, subject: str):
             img.add_header("Content-Disposition", "inline", filename="logo.jpg")
             msg.attach(img)
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
         server.login(GMAIL_USER, GMAIL_APP_PASS)
         server.sendmail(GMAIL_USER, RECIPIENTS, msg.as_string())
 
