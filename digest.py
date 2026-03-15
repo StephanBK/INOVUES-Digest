@@ -1,85 +1,71 @@
 #!/usr/bin/env python3
 """
 INOVUES Daily News Digest
-Fetches news, curates with Claude AI, sends branded HTML email at 8 AM daily.
+Monitors specific competitor/utility websites + GNews for targeted intelligence.
+Curates with Claude AI, sends branded HTML email at 8 AM daily.
 """
 
 import os
 import json
 import smtplib
 import requests
-import base64
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ── Config ────────────────────────────────────────────────────────────────────
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 GMAIL_USER        = os.environ["GMAIL_USER"]
 GMAIL_APP_PASS    = os.environ["GMAIL_APP_PASS"]
 RECIPIENTS        = os.environ.get("RECIPIENTS", GMAIL_USER).split(",")
-BRAVE_API_KEY     = os.environ.get("BRAVE_API_KEY", "")  # optional, falls back to RSS
+GNEWS_API_KEY     = os.environ.get("GNEWS_API_KEY", "")
 
-TOPICS = [
-    {
-        "name": "NYC Local Law 97 & Energy Policy",
-        "queries": ["NYC Local Law 97 compliance 2025", "New York City building energy policy"],
-        "emoji": "⚡"
-    },
-    {
-        "name": "Commercial Real Estate NYC",
-        "queries": ["NYC commercial real estate news", "New York office building market 2025"],
-        "emoji": "🏢"
-    },
-    {
-        "name": "Facade & Building Envelope",
-        "queries": ["commercial building facade retrofit", "curtain wall glazing industry news"],
-        "emoji": "🪟"
-    },
-    {
-        "name": "Energy Efficiency Incentives",
-        "queries": ["building energy efficiency grants incentives NYC", "IRA commercial building retrofit incentives"],
-        "emoji": "💡"
-    },
-    {
-        "name": "NYC DOB & Building Regulations",
-        "queries": ["NYC Department of Buildings regulations 2025", "NYC building code updates"],
-        "emoji": "📋"
-    },
-]
+# ── Watch List ────────────────────────────────────────────────────────────────
+WATCH_TARGETS = {
+    "Competitors": [
+        {"name": "Indow Window",                  "query": "Indow Window"},
+        {"name": "Alpen High Performance Windows", "query": "Alpen Windows"},
+    ],
+    "Utilities — NYC & New England": [
+        {"name": "Con Edison",        "query": "Con Edison building energy NYC"},
+        {"name": "National Grid",     "query": "National Grid energy efficiency building"},
+        {"name": "PSEG Long Island",  "query": "PSEG Long Island energy programs"},
+        {"name": "NYSERDA",           "query": "NYSERDA building retrofit incentives"},
+        {"name": "Eversource",        "query": "Eversource energy efficiency commercial building"},
+        {"name": "Avangrid / NYSEG",  "query": "Avangrid NYSEG energy program New York"},
+        {"name": "Central Hudson",    "query": "Central Hudson energy efficiency program"},
+        {"name": "Orange & Rockland", "query": "Orange Rockland utility energy program"},
+        {"name": "NY Power Authority","query": "NYPA clean energy commercial building"},
+        {"name": "Unitil",            "query": "Unitil energy efficiency New England"},
+    ],
+    "City Agencies": [
+        {"name": "NYC Mayor's Office of Climate", "query": "NYC climate environmental justice building emissions"},
+        {"name": "NYC Dept of Buildings",         "query": "NYC DOB Local Law 97 building compliance"},
+        {"name": "Boston BERDO",                  "query": "Boston BERDO building energy reporting compliance"},
+    ],
+}
 
 INOVUES_CONTEXT = """
 INOVUES is a NYC-based facade installation company specializing in secondary window 
-retrofit systems for commercial buildings. Their core product helps building owners 
-comply with NYC Local Law 97 (carbon emission limits), improve energy efficiency, 
-and reduce heating/cooling costs. Their target customers are owners and managers of 
-large commercial buildings in NYC. They compete on speed of installation, minimal 
+retrofit systems for commercial buildings. Their product helps building owners comply 
+with NYC Local Law 97 (carbon emission limits), improve energy efficiency, and reduce 
+heating/cooling costs. Target customers: owners and managers of large commercial 
+buildings in NYC and New England. They compete on speed of installation, minimal 
 disruption, and measurable energy savings.
+Key business interests: LL97 enforcement updates, utility rebate/incentive programs 
+for window retrofits, competitor product launches or marketing, building energy policy 
+changes, large commercial building retrofit projects.
 """
 
-# ── Fetch News ─────────────────────────────────────────────────────────────────
-def fetch_news_brave(query: str) -> list[dict]:
-    """Fetch news using Brave Search API."""
-    if not BRAVE_API_KEY:
+# ── Fetch News via GNews ───────────────────────────────────────────────────────
+def fetch_gnews(query: str, max_results: int = 5) -> list[dict]:
+    if not GNEWS_API_KEY:
         return []
-    try:
-        r = requests.get(
-            "https://api.search.brave.com/res/v1/news/search",
-            headers={"Accept": "application/json", "X-Subscription-Token": BRAVE_API_KEY},
-            params={"q": query, "count": 5, "freshness": "pd"},
-            timeout=10
-        )
-        if r.status_code == 200:
-            return r.json().get("results", [])
-    except Exception:
-        pass
-    return []
-
-
-def fetch_news_gnews(query: str) -> list[dict]:
-    """Fallback: GNews free tier."""
     try:
         r = requests.get(
             "https://gnews.io/api/v4/search",
@@ -87,83 +73,86 @@ def fetch_news_gnews(query: str) -> list[dict]:
                 "q": query,
                 "lang": "en",
                 "country": "us",
-                "max": 5,
-                "apikey": os.environ.get("GNEWS_API_KEY", ""),
+                "max": max_results,
+                "apikey": GNEWS_API_KEY,
             },
             timeout=10
         )
         if r.status_code == 200:
-            articles = r.json().get("articles", [])
-            return [{"title": a["title"], "url": a["url"], "description": a.get("description", ""), "age": a.get("publishedAt", "")} for a in articles]
-    except Exception:
-        pass
+            return [
+                {
+                    "title": a["title"],
+                    "url": a["url"],
+                    "description": a.get("description", ""),
+                    "source": a.get("source", {}).get("name", ""),
+                    "publishedAt": a.get("publishedAt", ""),
+                }
+                for a in r.json().get("articles", [])
+            ]
+    except Exception as e:
+        print(f"  GNews error for '{query}': {e}")
     return []
 
 
 def fetch_all_news() -> dict:
-    """Fetch raw news for all topics."""
     all_news = {}
-    for topic in TOPICS:
-        articles = []
-        for query in topic["queries"]:
-            results = fetch_news_brave(query) or fetch_news_gnews(query)
-            for r in results:
-                articles.append({
-                    "title": r.get("title", ""),
-                    "url": r.get("url", r.get("url", "")),
-                    "description": r.get("description", r.get("extra_snippets", [""])[0] if isinstance(r.get("extra_snippets"), list) else ""),
-                    "source": r.get("source", {}).get("name", "") if isinstance(r.get("source"), dict) else r.get("source", ""),
-                    "age": r.get("age", r.get("publishedAt", ""))
-                })
-        # Deduplicate by title
-        seen = set()
-        unique = []
-        for a in articles:
-            if a["title"] not in seen:
-                seen.add(a["title"])
-                unique.append(a)
-        all_news[topic["name"]] = unique
+    for category, targets in WATCH_TARGETS.items():
+        all_news[category] = {}
+        for target in targets:
+            print(f"  Fetching: {target['name']}")
+            articles = fetch_gnews(target["query"], max_results=4)
+            all_news[category][target["name"]] = articles
     return all_news
 
 
 # ── Claude Curation ────────────────────────────────────────────────────────────
 def curate_with_claude(all_news: dict) -> dict:
-    """Use Claude to select and summarize the most relevant stories."""
-    
     news_dump = json.dumps(all_news, indent=2)
-    
-    prompt = f"""You are the news curator for INOVUES, a NYC commercial building facade retrofit company.
+
+    prompt = f"""You are the intelligence analyst for INOVUES, a NYC commercial building facade retrofit company.
 
 Company context:
 {INOVUES_CONTEXT}
 
-Here is today's raw news collected across topics:
+Today's raw news monitored from competitors, utilities, and city agencies:
 {news_dump}
 
 Your task:
-1. For each topic, select the 2-4 most relevant and actionable stories for INOVUES
-2. If a story is not relevant to INOVUES at all, exclude it
-3. If a topic has no relevant news today, return an empty list for it
-4. Write a 1-2 sentence summary for each selected story explaining WHY it matters to INOVUES
-5. Assign a relevance score 1-10 (10 = critical for INOVUES business)
+1. Review ALL articles across all sources
+2. Select only the stories that are genuinely relevant to INOVUES (new incentive programs, policy changes, competitor moves, enforcement actions, new building requirements, etc.)
+3. Exclude generic/irrelevant articles
+4. Group selected stories by category (Competitors / Utilities / City Agencies)
+5. Write a 1-2 sentence INOVUES-specific insight for each story (not just a summary — explain the business implication)
+6. Score each story 1-10 for INOVUES relevance (10 = immediate action required)
+7. Write a single punchy headline summary of the day
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON, no markdown fences:
 {{
   "date": "{datetime.now().strftime('%A, %B %d, %Y')}",
-  "headline_summary": "A 1-sentence overall summary of today's most important news for INOVUES",
-  "topics": [
+  "headline_summary": "One punchy sentence summarizing today's most important intelligence for INOVUES",
+  "categories": [
     {{
-      "name": "topic name",
-      "emoji": "emoji",
+      "name": "Competitors",
+      "emoji": "🎯",
       "stories": [
         {{
-          "title": "story title",
-          "url": "story url",
-          "source": "publication name",
-          "summary": "why this matters to INOVUES in 1-2 sentences",
+          "source_name": "Indow Window",
+          "title": "article title",
+          "url": "article url",
+          "insight": "What this means for INOVUES in 1-2 sentences",
           "score": 8
         }}
       ]
+    }},
+    {{
+      "name": "Utilities — NYC & New England",
+      "emoji": "⚡",
+      "stories": []
+    }},
+    {{
+      "name": "City Agencies",
+      "emoji": "🏛️",
+      "stories": []
     }}
   ]
 }}"""
@@ -182,165 +171,123 @@ Return ONLY valid JSON in this exact format:
         },
         timeout=60
     )
-    
     response.raise_for_status()
-    content = response.json()["content"][0]["text"]
-    
-    # Strip markdown fences if present
-    content = content.strip()
+    content = response.json()["content"][0]["text"].strip()
     if content.startswith("```"):
         content = content.split("```")[1]
         if content.startswith("json"):
             content = content[4:]
-    content = content.strip()
-    
-    return json.loads(content)
+    return json.loads(content.strip())
 
 
-# ── Email HTML ─────────────────────────────────────────────────────────────────
+# ── Build HTML Email ───────────────────────────────────────────────────────────
 def build_html(digest: dict) -> str:
-    """Build the branded HTML email."""
-    
     date_str = digest.get("date", datetime.now().strftime('%A, %B %d, %Y'))
     headline = digest.get("headline_summary", "Your daily INOVUES intelligence briefing.")
-    topics = digest.get("topics", [])
-    
-    # Build topic sections
-    topic_html = ""
-    total_stories = 0
-    
-    for topic in topics:
-        stories = topic.get("stories", [])
+    categories = digest.get("categories", [])
+
+    total_stories = sum(len(c.get("stories", [])) for c in categories)
+    active_cats   = sum(1 for c in categories if c.get("stories"))
+
+    categories_html = ""
+    for cat in categories:
+        stories = cat.get("stories", [])
         if not stories:
             continue
-        total_stories += len(stories)
-        
         stories_html = ""
-        for story in sorted(stories, key=lambda x: x.get("score", 0), reverse=True):
-            score = story.get("score", 5)
-            score_color = "#1B9FAF" if score >= 8 else "#5BB8C4" if score >= 6 else "#9AD4DB"
+        for s in sorted(stories, key=lambda x: x.get("score", 0), reverse=True):
+            score = s.get("score", 5)
+            dot_color = "#1B9FAF" if score >= 8 else "#5BB8C4" if score >= 6 else "#9AD4DB"
             stories_html += f"""
             <tr>
-              <td style="padding: 16px 0; border-bottom: 1px solid #f0f0f0;">
+              <td style="padding:16px 0; border-bottom:1px solid #f4f4f4;">
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td>
-                      <a href="{story.get('url','#')}" style="font-size:15px; font-weight:600; color:#1a1a1a; text-decoration:none; line-height:1.4;">{story.get('title','')}</a>
-                      <p style="margin:6px 0 0; font-size:13px; color:#555; line-height:1.6;">{story.get('summary','')}</p>
-                      <p style="margin:6px 0 0; font-size:12px; color:#999;">{story.get('source','')}</p>
+                    <td width="8" style="vertical-align:top; padding-top:6px;">
+                      <div style="width:8px;height:8px;border-radius:50%;background:{dot_color};"></div>
                     </td>
-                    <td width="40" style="vertical-align:top; padding-left:12px; text-align:center;">
-                      <div style="background:{score_color}; color:white; border-radius:50%; width:32px; height:32px; line-height:32px; text-align:center; font-size:12px; font-weight:700;">{score}</div>
+                    <td style="padding-left:12px;">
+                      <p style="margin:0 0 2px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.8px;">{s.get('source_name','')}</p>
+                      <a href="{s.get('url','#')}" style="font-size:15px;font-weight:600;color:#1a1a1a;text-decoration:none;line-height:1.4;">{s.get('title','')}</a>
+                      <p style="margin:6px 0 0;font-size:13px;color:#555;line-height:1.6;border-left:2px solid #1B9FAF;padding-left:10px;">{s.get('insight','')}</p>
+                    </td>
+                    <td width="36" style="vertical-align:top;text-align:right;padding-left:8px;">
+                      <div style="background:{dot_color};color:white;border-radius:4px;width:28px;height:22px;line-height:22px;text-align:center;font-size:11px;font-weight:700;">{score}</div>
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>"""
-        
-        topic_html += f"""
+
+        categories_html += f"""
         <tr>
-          <td style="padding: 28px 0 4px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="border-left: 3px solid #1B9FAF; padding-left: 12px;">
-                  <span style="font-size:11px; font-weight:700; letter-spacing:1.5px; color:#1B9FAF; text-transform:uppercase;">{topic.get('emoji','')} {topic.get('name','')}</span>
-                </td>
-              </tr>
-            </table>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              {stories_html}
-            </table>
+          <td style="padding:24px 0 0;">
+            <p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#1B9FAF;text-transform:uppercase;">{cat.get('emoji','')} {cat.get('name','')}</p>
+            <table width="100%" cellpadding="0" cellspacing="0">{stories_html}</table>
           </td>
         </tr>"""
-    
-    if not topic_html:
-        topic_html = """<tr><td style="padding:24px 0; color:#888; font-size:14px;">No significant news found for INOVUES today.</td></tr>"""
 
-    html = f"""<!DOCTYPE html>
+    if not categories_html:
+        categories_html = '<tr><td style="padding:24px 0;color:#888;font-size:14px;">No significant intelligence found today.</td></tr>'
+
+    return f"""<!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INOVUES Daily Digest</title>
-</head>
-<body style="margin:0; padding:0; background:#f4f4f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f0f0f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f0f0;padding:32px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4; padding: 32px 16px;">
-  <tr>
-    <td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%;">
-        
-        <!-- Header -->
-        <tr>
-          <td style="background:#1B9FAF; border-radius:12px 12px 0 0; padding: 32px 40px; text-align:center;">
-            <img src="cid:inovues_logo" alt="INOVUES" width="80" style="display:block; margin: 0 auto 16px;">
-            <p style="margin:0; font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.7); text-transform:uppercase; font-weight:600;">Daily Intelligence Digest</p>
-            <p style="margin:8px 0 0; font-size:22px; font-weight:700; color:white;">{date_str}</p>
-          </td>
-        </tr>
-        
-        <!-- Headline summary -->
-        <tr>
-          <td style="background:#0e7a87; padding: 16px 40px; border-radius:0;">
-            <p style="margin:0; font-size:14px; color:rgba(255,255,255,0.9); line-height:1.6; font-style:italic;">"{headline}"</p>
-          </td>
-        </tr>
-        
-        <!-- Stats bar -->
-        <tr>
-          <td style="background:white; padding: 14px 40px; border-bottom: 1px solid #eee;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="font-size:12px; color:#999;">{total_stories} stories across {len([t for t in topics if t.get('stories')])} topics</td>
-                <td style="text-align:right; font-size:12px; color:#999;">Relevance scored by AI ●</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        
-        <!-- Body -->
-        <tr>
-          <td style="background:white; padding: 8px 40px 32px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              {topic_html}
-            </table>
-          </td>
-        </tr>
-        
-        <!-- Footer -->
-        <tr>
-          <td style="background:#1a1a1a; border-radius:0 0 12px 12px; padding: 24px 40px; text-align:center;">
-            <p style="margin:0 0 6px; font-size:12px; color:#666; letter-spacing:1px; text-transform:uppercase;">INOVUES · Adaptive Glazing Shields</p>
-            <p style="margin:0; font-size:11px; color:#444;">This digest is generated automatically every morning at 8 AM EST.</p>
-          </td>
-        </tr>
-        
-      </table>
-    </td>
-  </tr>
+      <!-- Header -->
+      <tr><td style="background:#1B9FAF;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+        <img src="cid:inovues_logo" alt="INOVUES" width="72" style="display:block;margin:0 auto 14px;">
+        <p style="margin:0;font-size:10px;letter-spacing:2.5px;color:rgba(255,255,255,0.65);text-transform:uppercase;font-weight:600;">Intelligence Digest</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:700;color:white;">{date_str}</p>
+      </td></tr>
+
+      <!-- Headline -->
+      <tr><td style="background:#158c99;padding:14px 40px;">
+        <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.88);line-height:1.6;font-style:italic;">"{headline}"</p>
+      </td></tr>
+
+      <!-- Stats bar -->
+      <tr><td style="background:white;padding:12px 40px;border-bottom:1px solid #eee;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:12px;color:#aaa;">{total_stories} stories · {active_cats} categories</td>
+            <td style="text-align:right;font-size:12px;color:#aaa;">AI-scored relevance</td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td style="background:white;padding:4px 40px 36px;">
+        <table width="100%" cellpadding="0" cellspacing="0">{categories_html}</table>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="background:#1a1a1a;border-radius:0 0 12px 12px;padding:22px 40px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:11px;color:#555;letter-spacing:1px;text-transform:uppercase;">INOVUES · Adaptive Glazing Shields</p>
+        <p style="margin:0;font-size:10px;color:#444;">Delivered daily at 8 AM EST · Powered by Claude AI</p>
+      </td></tr>
+
+    </table>
+  </td></tr>
 </table>
-
-</body>
-</html>"""
-    
-    return html
+</body></html>"""
 
 
 # ── Send Email ─────────────────────────────────────────────────────────────────
 def send_email(html: str, subject: str):
-    """Send the digest email via Gmail SMTP."""
-    
     msg = MIMEMultipart("related")
-    msg["From"]    = f"INOVUES Digest <{GMAIL_USER}>"
+    msg["From"]    = f"INOVUES Intelligence <{GMAIL_USER}>"
     msg["To"]      = ", ".join(RECIPIENTS)
     msg["Subject"] = subject
-    
-    # Attach HTML
-    msg_alt = MIMEMultipart("alternative")
-    msg.attach(msg_alt)
-    msg_alt.attach(MIMEText(html, "html"))
-    
-    # Attach logo as inline image
+
+    alt = MIMEMultipart("alternative")
+    msg.attach(alt)
+    alt.attach(MIMEText(html, "html"))
+
     logo_path = Path(__file__).parent / "logo.jpg"
     if logo_path.exists():
         with open(logo_path, "rb") as f:
@@ -348,38 +295,30 @@ def send_email(html: str, subject: str):
             img.add_header("Content-ID", "<inovues_logo>")
             img.add_header("Content-Disposition", "inline", filename="logo.jpg")
             msg.attach(img)
-    
+
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(GMAIL_USER, GMAIL_APP_PASS)
         server.sendmail(GMAIL_USER, RECIPIENTS, msg.as_string())
-    
-    print(f"✅ Digest sent to {', '.join(RECIPIENTS)}")
+
+    print(f"✅ Sent to {', '.join(RECIPIENTS)}")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 def main():
-    print(f"🦞 INOVUES Digest starting — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    
+    print(f"🏢 INOVUES Digest — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print("📰 Fetching news...")
     all_news = fetch_all_news()
-    
-    total_raw = sum(len(v) for v in all_news.values())
-    print(f"   Found {total_raw} raw articles")
-    
+
     print("🤖 Curating with Claude...")
     digest = curate_with_claude(all_news)
-    
+
     print("🎨 Building email...")
     html = build_html(digest)
-    
-    date_short = datetime.now().strftime("%b %d")
-    subject = f"INOVUES Daily Digest — {date_short}"
-    
-    print("📬 Sending email...")
-    send_email(html, subject)
-    
-    print("✅ Done!")
 
+    subject = f"INOVUES Intelligence — {datetime.now().strftime('%b %d, %Y')}"
+    print("📬 Sending...")
+    send_email(html, subject)
+    print("✅ Done!")
 
 if __name__ == "__main__":
     main()
