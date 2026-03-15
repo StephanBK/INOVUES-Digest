@@ -28,25 +28,30 @@ GNEWS_API_KEY     = os.environ.get("GNEWS_API_KEY", "")
 # ── Watch List ────────────────────────────────────────────────────────────────
 WATCH_TARGETS = {
     "Competitors": [
-        {"name": "Indow Window",                  "query": "Indow Window"},
-        {"name": "Alpen High Performance Windows", "query": "Alpen Windows"},
+        {"name": "Indow Window",                  "query": "Indow Window retrofit"},
+        {"name": "Alpen High Performance Windows", "query": "Alpen Windows commercial"},
     ],
     "Utilities — NYC & New England": [
-        {"name": "Con Edison",        "query": "Con Edison building energy NYC"},
-        {"name": "National Grid",     "query": "National Grid energy efficiency building"},
-        {"name": "PSEG Long Island",  "query": "PSEG Long Island energy programs"},
-        {"name": "NYSERDA",           "query": "NYSERDA building retrofit incentives"},
-        {"name": "Eversource",        "query": "Eversource energy efficiency commercial building"},
-        {"name": "Avangrid / NYSEG",  "query": "Avangrid NYSEG energy program New York"},
-        {"name": "Central Hudson",    "query": "Central Hudson energy efficiency program"},
-        {"name": "Orange & Rockland", "query": "Orange Rockland utility energy program"},
-        {"name": "NY Power Authority","query": "NYPA clean energy commercial building"},
-        {"name": "Unitil",            "query": "Unitil energy efficiency New England"},
+        {"name": "Con Edison",        "query": "Con Edison rebate incentive commercial building retrofit"},
+        {"name": "National Grid",     "query": "National Grid rebate program commercial building energy"},
+        {"name": "PSEG Long Island",  "query": "PSEG Long Island energy efficiency incentive program"},
+        {"name": "NYSERDA",           "query": "NYSERDA commercial building energy efficiency program grant"},
+        {"name": "Eversource",        "query": "Eversource commercial building rebate energy efficiency program"},
+        {"name": "Avangrid / NYSEG",  "query": "Avangrid NYSEG commercial building energy incentive"},
+        {"name": "Central Hudson",    "query": "Central Hudson commercial energy efficiency rebate"},
+        {"name": "Orange & Rockland", "query": "Orange Rockland energy efficiency commercial program"},
+        {"name": "NY Power Authority","query": "NYPA commercial building clean energy retrofit"},
+        {"name": "Unitil",            "query": "Unitil commercial energy efficiency program New England"},
     ],
     "City Agencies": [
-        {"name": "NYC Mayor's Office of Climate", "query": "NYC climate environmental justice building emissions"},
-        {"name": "NYC Dept of Buildings",         "query": "NYC DOB Local Law 97 building compliance"},
-        {"name": "Boston BERDO",                  "query": "Boston BERDO building energy reporting compliance"},
+        {"name": "NYC Mayor's Office of Climate", "query": "NYC building emissions decarbonization retrofit 2025"},
+        {"name": "NYC Dept of Buildings",         "query": "NYC Local Law 97 building retrofit compliance fine"},
+        {"name": "Boston BERDO",                  "query": "Boston building energy retrofit decarbonization BERDO"},
+    ],
+    "Building Retrofits & Market": [
+        {"name": "NYC Office Conversions",        "query": "NYC office to residential hotel conversion retrofit 2025"},
+        {"name": "Commercial Building Retrofits",  "query": "commercial building facade window retrofit energy upgrade NYC"},
+        {"name": "Building Decarbonization",       "query": "commercial building decarbonization retrofit New York New England"},
     ],
 }
 
@@ -109,7 +114,7 @@ def fetch_all_news() -> dict:
 def curate_with_claude(all_news: dict) -> dict:
     news_dump = json.dumps(all_news, indent=2)
 
-    prompt = f"""You are the intelligence analyst for INOVUES, a NYC commercial building facade retrofit company.
+    prompt = f"""You are the news curator for INOVUES, a NYC commercial building facade retrofit company.
 
 Company context:
 {INOVUES_CONTEXT}
@@ -118,13 +123,21 @@ Today's raw news monitored from competitors, utilities, and city agencies:
 {news_dump}
 
 Your task:
-1. Review ALL articles across all sources
-2. Select only the stories that are genuinely relevant to INOVUES (new incentive programs, policy changes, competitor moves, enforcement actions, new building requirements, etc.)
-3. Exclude generic/irrelevant articles
-4. Group selected stories by category (Competitors / Utilities / City Agencies)
-5. Write a 1-2 sentence INOVUES-specific insight for each story (not just a summary — explain the business implication)
-6. Score each story 1-10 for INOVUES relevance (10 = immediate action required)
-7. Write a single punchy headline summary of the day
+1. Review ALL articles and include ANYTHING that could interest INOVUES, including:
+   - Building retrofit projects (office to hotel, office to residential, facade upgrades)
+   - Utility rebate or incentive programs (even general ones)
+   - Energy efficiency initiatives or mandates
+   - Commercial real estate transformation projects
+   - Competitor news, product launches, partnerships
+   - Policy updates, new regulations, enforcement
+   - Large building renovation or decarbonization projects
+   - ANY news from the monitored sources (even if loosely related)
+2. Be INCLUSIVE not exclusive — if in doubt, include it
+3. Only skip articles that are completely unrelated (e.g. residential consumer tips, unrelated industries)
+4. Group stories by category (Competitors / Utilities / City Agencies)
+5. Write a 1-2 sentence insight explaining relevance or opportunity for INOVUES
+6. Score 1-10 for INOVUES relevance (10 = direct sales opportunity, 1 = background awareness)
+7. Write a punchy headline summary
 
 Return ONLY valid JSON, no markdown fences:
 {{
