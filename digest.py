@@ -331,14 +331,6 @@ def send_email(html: str, subject: str):
     msg.attach(alt)
     alt.attach(MIMEText(html, "html"))
 
-    logo_path = Path(__file__).parent / "logo.jpg"
-    if logo_path.exists():
-        with open(logo_path, "rb") as f:
-            img = MIMEImage(f.read(), _subtype="jpeg")
-            img.add_header("Content-ID", "<inovues_logo>")
-            img.add_header("Content-Disposition", "inline", filename="logo.jpg")
-            msg.attach(img)
-
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
         server.login(GMAIL_USER, GMAIL_APP_PASS)
