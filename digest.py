@@ -145,7 +145,7 @@ def fetch_all() -> list[dict]:
     for target in SEARCH_QUERIES:
         print(f"  [{target['category']}] {target['source']}")
         results = search_with_claude(target["query"])
-        time.sleep(0.3)
+        time.sleep(2)
 
         for res in results:
             url = res.get("url", "")
@@ -205,13 +205,24 @@ Return ONLY valid JSON (no markdown fences):
   ]
 }}"""
 
-    r = requests.post(
-        "https://api.anthropic.com/v1/messages",
-        headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-        json={"model": "claude-haiku-4-5", "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]},
-        timeout=90
-    )
-    r.raise_for_status()
+    for attempt in range(3):
+        try:
+            r = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+                json={"model": "claude-haiku-4-5", "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]},
+                timeout=90
+            )
+            if r.status_code == 429:
+                print(f"  Rate limited, waiting 30s... (attempt {attempt+1}/3)")
+                time.sleep(30)
+                continue
+            r.raise_for_status()
+            break
+        except Exception as e:
+            if attempt == 2:
+                raise
+            time.sleep(30)
     content = r.json()["content"][0]["text"].strip()
     if "```" in content:
         parts = content.split("```")
