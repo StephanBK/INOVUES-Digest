@@ -293,8 +293,7 @@ def build_html(digest: dict) -> str:
 <tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
   <tr><td style="background:#1B9FAF;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
-    <img src="cid:inovues_logo" alt="INOVUES" width="30" height="30" style="display:block;margin:0 auto 14px;object-fit:contain;">
-    <p style="margin:0;font-size:10px;letter-spacing:2.5px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:600;">Weekly Intelligence Digest</p>
+<p style="margin:0;font-size:10px;letter-spacing:2.5px;color:rgba(255,255,255,0.6);text-transform:uppercase;font-weight:600;">Weekly Intelligence Digest</p>
     <p style="margin:8px 0 0;font-size:18px;font-weight:700;color:white;">{date_str}</p>
   </td></tr>
 
