@@ -145,7 +145,7 @@ def fetch_all() -> list[dict]:
     for target in SEARCH_QUERIES:
         print(f"  [{target['category']}] {target['source']}")
         results = search_with_claude(target["query"])
-        time.sleep(2)
+        time.sleep(4)
 
         for res in results:
             url = res.get("url", "")
