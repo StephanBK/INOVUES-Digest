@@ -322,6 +322,7 @@ def build_html(digest: dict) -> str:
 
 
 def send_email(html: str, subject: str):
+    import socket
     msg = MIMEMultipart("related")
     msg["From"]    = f"INOVUES Intelligence <{GMAIL_USER}>"
     msg["To"]      = ", ".join(RECIPIENTS)
@@ -331,7 +332,15 @@ def send_email(html: str, subject: str):
     msg.attach(alt)
     alt.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+    # Force IPv4 — Railway sometimes fails on IPv6 for smtp.gmail.com
+    addr_info = socket.getaddrinfo("smtp.gmail.com", 587, socket.AF_INET, socket.SOCK_STREAM)
+    if not addr_info:
+        raise Exception("Could not resolve smtp.gmail.com to IPv4")
+    ipv4_addr = addr_info[0][4][0]
+    print(f"Connecting to smtp.gmail.com via IPv4: {ipv4_addr}")
+
+    with smtplib.SMTP(ipv4_addr, 587) as server:
+        server.ehlo("localhost")
         server.starttls()
         server.login(GMAIL_USER, GMAIL_APP_PASS)
         server.sendmail(GMAIL_USER, RECIPIENTS, msg.as_string())
