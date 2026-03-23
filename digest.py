@@ -224,6 +224,34 @@ Return ONLY valid JSON (no markdown fences):
                 raise
             time.sleep(30)
     content = r.json()["content"][0]["text"].strip()
+    
+    def try_parse(s):
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            pass
+        # Repair common Claude JSON issues
+        import re
+        s = re.sub(r',\s*}', '}', s)  # trailing comma before }
+        s = re.sub(r',\s*]', ']', s)  # trailing comma before ]
+        s = s.replace('\n', ' ')       # newlines inside strings
+        # Fix unescaped quotes inside string values
+        # Try progressively more aggressive fixes
+        try:
+            return json.loads(s)
+        except json.JSONDecodeError:
+            pass
+        # Last resort: extract each story manually won't work, 
+        # so truncate at the last valid closing brace
+        for end_pos in range(len(s) - 1, 0, -1):
+            if s[end_pos] == '}':
+                try:
+                    return json.loads(s[:end_pos + 1])
+                except json.JSONDecodeError:
+                    continue
+        return None
+
+    # Try markdown fenced JSON first
     if "```" in content:
         parts = content.split("```")
         for part in parts:
@@ -231,15 +259,30 @@ Return ONLY valid JSON (no markdown fences):
             if part.startswith("json"):
                 part = part[4:].strip()
             if part.startswith("{"):
-                try:
-                    return json.loads(part)
-                except:
-                    pass
+                result = try_parse(part)
+                if result:
+                    return result
+
+    # Try raw JSON extraction
     if "{" in content:
         start = content.index("{")
-        end   = content.rindex("}") + 1
-        return json.loads(content[start:end])
-    return json.loads(content)
+        end = content.rindex("}") + 1
+        result = try_parse(content[start:end])
+        if result:
+            return result
+
+    # Final attempt on full content
+    result = try_parse(content)
+    if result:
+        return result
+
+    # If all parsing fails, return a minimal valid digest
+    print(f"WARNING: Could not parse Claude response. Raw content length: {len(content)}")
+    return {
+        "date": f"Week of {WEEK_AGO} — {TODAY}",
+        "headline_summary": "Digest curation encountered a parsing issue — showing raw results.",
+        "categories": []
+    }
 
 
 def build_html(digest: dict) -> str:
