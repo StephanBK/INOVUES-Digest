@@ -332,16 +332,15 @@ def send_email(html: str, subject: str):
     msg.attach(alt)
     alt.attach(MIMEText(html, "html"))
 
-    # Force IPv4 — Railway sometimes fails on IPv6 for smtp.gmail.com
-    addr_info = socket.getaddrinfo("smtp.gmail.com", 587, socket.AF_INET, socket.SOCK_STREAM)
+    # Force IPv4 + use SSL on port 465 (Railway blocks port 587)
+    addr_info = socket.getaddrinfo("smtp.gmail.com", 465, socket.AF_INET, socket.SOCK_STREAM)
     if not addr_info:
         raise Exception("Could not resolve smtp.gmail.com to IPv4")
     ipv4_addr = addr_info[0][4][0]
-    print(f"Connecting to smtp.gmail.com via IPv4: {ipv4_addr}")
+    print(f"Connecting to smtp.gmail.com via IPv4 SSL: {ipv4_addr}:465")
 
-    with smtplib.SMTP(ipv4_addr, 587) as server:
+    with smtplib.SMTP_SSL(ipv4_addr, 465, timeout=30) as server:
         server.ehlo("localhost")
-        server.starttls()
         server.login(GMAIL_USER, GMAIL_APP_PASS)
         server.sendmail(GMAIL_USER, RECIPIENTS, msg.as_string())
     print(f"✅ Sent to {', '.join(RECIPIENTS)}")
