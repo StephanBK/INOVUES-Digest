@@ -26,6 +26,7 @@ RECIPIENTS        = os.environ.get("RECIPIENTS", GMAIL_USER).split(",")
 
 TODAY    = datetime.now().strftime("%B %d, %Y")
 WEEK_AGO = (datetime.now() - timedelta(days=7)).strftime("%B %d, %Y")
+SENT_URLS_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sent_urls.log")
 
 INOVUES_CONTEXT = """
 INOVUES installs secondary window retrofit systems on commercial buildings in NYC and New England.
@@ -81,7 +82,7 @@ def search_with_claude(query: str) -> list[dict]:
                 "tools": [{"type": "web_search_20250305", "name": "web_search"}],
                 "messages": [{
                     "role": "user",
-                    "content": f"Search the web for: {query}\n\nAfter searching, list the top 3-4 results you found as a JSON array with fields: title, url, snippet. Return ONLY the JSON array, nothing else."
+                    "content": f"Search the web for: {query}\n\nIMPORTANT: Only include results published within the last 7 days (after {WEEK_AGO}). Skip anything older.\n\nList the top 3-4 recent results as a JSON array with fields: title, url, snippet. Return ONLY the JSON array, nothing else."
                 }]
             },
             timeout=45
@@ -142,6 +143,12 @@ def search_with_claude(query: str) -> list[dict]:
 def fetch_all() -> list[dict]:
     all_articles = []
     seen_urls    = set()
+
+    # Load previously sent URLs to avoid duplicates across weeks
+    if os.path.exists(SENT_URLS_LOG):
+        with open(SENT_URLS_LOG, "r") as f:
+            seen_urls = set(line.strip() for line in f if line.strip())
+    prev_count = len(seen_urls)
 
     for target in SEARCH_QUERIES:
         print(f"  [{target['category']}] {target['source']}")
@@ -406,6 +413,18 @@ def main():
     subject = f"INOVUES Weekly Intelligence — {datetime.now().strftime('%b %d, %Y')}"
     print("📬 Sending...")
     send_email(html, subject)
+
+    # Log all URLs we just sent so they won't appear in future digests
+    sent_urls = set()
+    for cat in digest.get("categories", []):
+        for story in cat.get("stories", []):
+            if story.get("url"):
+                sent_urls.add(story["url"])
+    with open(SENT_URLS_LOG, "a") as f:
+        for url in sent_urls:
+            f.write(url + "\n")
+    print(f"   → Logged {len(sent_urls)} URLs to prevent future duplicates")
+
     print("✅ Done!")
 
 if __name__ == "__main__":
