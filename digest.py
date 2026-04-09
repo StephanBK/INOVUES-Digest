@@ -44,25 +44,75 @@ Key interests:
 """
 
 SEARCH_QUERIES = [
-    {"category": "Competitors",           "source": "Indow Window",             "query": "Indow Window news updates 2025 2026"},
-    {"category": "Competitors",           "source": "Alpen Windows",            "query": "Alpen High Performance Windows news 2025 2026"},
-    {"category": "Utilities",             "source": "Con Edison",               "query": "Con Edison commercial building energy rebate program 2025 2026"},
-    {"category": "Utilities",             "source": "NYSERDA",                  "query": "NYSERDA commercial building energy efficiency incentive 2025 2026"},
-    {"category": "Utilities",             "source": "National Grid",            "query": "National Grid commercial building rebate energy 2025 2026"},
-    {"category": "Utilities",             "source": "Eversource",               "query": "Eversource commercial building energy efficiency rebate 2025 2026"},
-    {"category": "Utilities",             "source": "PSEG Long Island",         "query": "PSEG Long Island commercial energy incentive program 2026"},
-    {"category": "Utilities",             "source": "NY Power Authority",       "query": "NYPA commercial building clean energy program 2026"},
-    {"category": "Policy & Regulations",  "source": "NYC Local Law 97",         "query": "NYC Local Law 97 building compliance fine enforcement 2026"},
-    {"category": "Policy & Regulations",  "source": "NYC Dept of Buildings",    "query": "NYC DOB building energy retrofit regulation 2026"},
-    {"category": "Policy & Regulations",  "source": "Boston BERDO",             "query": "Boston BERDO building energy reporting compliance 2026"},
-    {"category": "Industry Publications", "source": "The Real Deal NYC",        "query": "site:therealdeal.com building retrofit energy renovation"},
-    {"category": "Industry Publications", "source": "GreenBiz",                 "query": "site:greenbiz.com commercial building energy efficiency retrofit"},
-    {"category": "Industry Publications", "source": "ENR",                      "query": "site:enr.com building retrofit renovation energy efficiency"},
-    {"category": "Industry Publications", "source": "Commercial Property Exec", "query": "site:cpexecutive.com building energy retrofit renovation"},
-    {"category": "Industry Publications", "source": "Propmodo",                 "query": "site:propmodo.com building energy efficiency retrofit"},
-    {"category": "Market Intelligence",   "source": "Office Conversions",       "query": "NYC office to residential hotel conversion project 2026"},
-    {"category": "Market Intelligence",   "source": "Building Retrofits",       "query": "commercial building facade window energy retrofit NYC 2026"},
-    {"category": "Market Intelligence",   "source": "Decarbonization",          "query": "commercial building decarbonization retrofit New York 2026"},
+
+    # ── CATEGORY 1: Competitor Intelligence ──────────────────────────────────
+    {"category": "Competitor Intelligence", "source": "Indow Window",             "query": "Indow Window news updates 2026"},
+    {"category": "Competitor Intelligence", "source": "Alpen Windows",            "query": "Alpen High Performance Windows news 2026"},
+    {"category": "Competitor Intelligence", "source": "Ubiquitous Energy",        "query": "site:ubiquitousenergy.com news 2026"},
+    {"category": "Competitor Intelligence", "source": "Andluca Technologies",     "query": "site:andluca.com smart window news 2026"},
+    {"category": "Competitor Intelligence", "source": "Facade Tectonics",         "query": "site:facadetectonics.com facade building news 2026"},
+    {"category": "Competitor Intelligence", "source": "FGIA",                     "query": "site:fgiaonline.org window door skylight industry news 2026"},
+    {"category": "Competitor Intelligence", "source": "National Glass Association","query": "site:glass.org commercial glazing window news 2026"},
+    {"category": "Competitor Intelligence", "source": "glassonweb",               "query": "site:glassonweb.com commercial window glazing news 2026"},
+    {"category": "Competitor Intelligence", "source": "IGS Magazine",             "query": "site:igsmag.com window glazing industry news 2026"},
+    {"category": "Competitor Intelligence", "source": "Secondary Window Market",  "query": "commercial secondary window retrofit system competitor 2026"},
+
+    # ── CATEGORY 2: Market & Industry News ───────────────────────────────────
+    {"category": "Market & Industry News",  "source": "GreenBiz",                 "query": "site:greenbiz.com commercial building energy efficiency retrofit 2026"},
+    {"category": "Market & Industry News",  "source": "ENR",                      "query": "site:enr.com building retrofit renovation energy efficiency 2026"},
+    {"category": "Market & Industry News",  "source": "Commercial Property Exec", "query": "site:cpexecutive.com building energy retrofit renovation 2026"},
+    {"category": "Market & Industry News",  "source": "Propmodo",                 "query": "site:propmodo.com building energy efficiency retrofit 2026"},
+    {"category": "Market & Industry News",  "source": "Retrofit Magazine",        "query": "site:retrofitmag.com commercial building renovation 2026"},
+    {"category": "Market & Industry News",  "source": "BuildingGreen",            "query": "site:buildinggreen.com commercial building retrofit energy 2026"},
+    {"category": "Market & Industry News",  "source": "New Buildings Institute",  "query": "site:newbuildings.org commercial building energy policy 2026"},
+    {"category": "Market & Industry News",  "source": "IMT",                      "query": "site:imt.org building energy efficiency policy 2026"},
+    {"category": "Market & Industry News",  "source": "USGBC",                    "query": "site:usgbc.org commercial building green certification 2026"},
+    {"category": "Market & Industry News",  "source": "Living Future Institute",  "query": "site:living-future.org building performance standard 2026"},
+    {"category": "Market & Industry News",  "source": "Cleantech Group",          "query": "site:cleantech.com building energy efficiency startup 2026"},
+    {"category": "Market & Industry News",  "source": "Greentown Labs",           "query": "site:greentownlabs.com building energy climatetech 2026"},
+    {"category": "Market & Industry News",  "source": "Breakthrough Energy",      "query": "site:breakthroughenergy.org building decarbonization 2026"},
+    {"category": "Market & Industry News",  "source": "Shadow Ventures",          "query": "site:shadowventures.com AEC built environment news 2026"},
+    {"category": "Market & Industry News",  "source": "NAESCO",                   "query": "site:naesco.org energy service building retrofit 2026"},
+    {"category": "Market & Industry News",  "source": "PACENation",               "query": "site:pacenation.us PACE financing commercial building 2026"},
+    {"category": "Market & Industry News",  "source": "Alliance To Save Energy",  "query": "site:ase.org commercial building energy efficiency 2026"},
+    {"category": "Market & Industry News",  "source": "Better Buildings DOE",     "query": "site:betterbuildingssolutioncenter.energy.gov commercial retrofit 2026"},
+    {"category": "Market & Industry News",  "source": "BE-Ex NY",                 "query": "site:beexny.org building energy NYC 2026"},
+    {"category": "Market & Industry News",  "source": "Urban Green Council",      "query": "site:urbangreencouncil.org NYC building energy 2026"},
+    {"category": "Market & Industry News",  "source": "NESEA",                    "query": "site:nesea.org northeast building energy efficiency 2026"},
+    {"category": "Market & Industry News",  "source": "Saint-Gobain NOVA",        "query": "site:sgnova.com building materials construction startup 2026"},
+    {"category": "Market & Industry News",  "source": "Greenbuild",               "query": "site:greenbuildexpo.com green building news 2026"},
+    {"category": "Market & Industry News",  "source": "Office Conversions",       "query": "NYC office to residential hotel conversion project 2026"},
+    {"category": "Market & Industry News",  "source": "Facade Retrofits",         "query": "commercial building facade window energy retrofit NYC 2026"},
+    {"category": "Market & Industry News",  "source": "Decarbonization",          "query": "commercial building decarbonization retrofit New York 2026"},
+
+    # ── CATEGORY 3: Commercial Real Estate News ───────────────────────────────
+    {"category": "Commercial Real Estate News", "source": "Bisnow",              "query": "site:bisnow.com commercial real estate NYC building 2026"},
+    {"category": "Commercial Real Estate News", "source": "CoStar",              "query": "site:costar.com commercial real estate market NYC 2026"},
+    {"category": "Commercial Real Estate News", "source": "The Real Deal",       "query": "site:therealdeal.com commercial building NYC 2026"},
+    {"category": "Commercial Real Estate News", "source": "BOMA International",  "query": "site:boma.org commercial building owner manager news 2026"},
+    {"category": "Commercial Real Estate News", "source": "BOMA New York",       "query": "site:bomany.org NYC commercial real estate building 2026"},
+    {"category": "Commercial Real Estate News", "source": "JLL",                 "query": "site:jll.com commercial real estate market NYC office 2026"},
+    {"category": "Commercial Real Estate News", "source": "CBRE",                "query": "site:cbre.com commercial real estate NYC market report 2026"},
+    {"category": "Commercial Real Estate News", "source": "NYC Climate Office",  "query": "site:nyc.gov commercial building climate energy retrofit 2026"},
+
+    # ── CATEGORY 4: Deals Announced ──────────────────────────────────────────
+    {"category": "Deals Announced", "source": "NYC Commercial Sales",            "query": "commercial building acquisition sale closed NYC 2026"},
+    {"category": "Deals Announced", "source": "New England Commercial Sales",    "query": "commercial property sale deal closed New England 2026"},
+    {"category": "Deals Announced", "source": "CRE Transactions",               "query": "commercial real estate transaction acquisition announced 2026"},
+
+    # ── CATEGORY 5: Utility News ─────────────────────────────────────────────
+    {"category": "Utility News", "source": "Con Edison",                         "query": "Con Edison commercial building energy rebate incentive 2026"},
+    {"category": "Utility News", "source": "NYSERDA",                            "query": "NYSERDA commercial building energy efficiency incentive 2026"},
+    {"category": "Utility News", "source": "National Grid",                      "query": "National Grid commercial building rebate energy program 2026"},
+    {"category": "Utility News", "source": "Eversource",                         "query": "Eversource commercial building energy efficiency rebate 2026"},
+    {"category": "Utility News", "source": "PSEG Long Island",                   "query": "PSEG Long Island commercial energy incentive program 2026"},
+    {"category": "Utility News", "source": "NY Power Authority",                 "query": "NYPA commercial building clean energy program 2026"},
+    {"category": "Utility News", "source": "Duke Energy",                        "query": "Duke Energy commercial building energy efficiency rebate 2026"},
+    {"category": "Utility News", "source": "Southern Company",                   "query": "Southern Company commercial building energy efficiency 2026"},
+    {"category": "Utility News", "source": "Dominion Energy",                    "query": "Dominion Energy commercial building rebate program 2026"},
+    {"category": "Utility News", "source": "PG&E",                               "query": "PGE Pacific Gas Electric commercial building rebate 2026"},
+    {"category": "Utility News", "source": "MassCEC",                            "query": "MassCEC Massachusetts commercial building clean energy 2026"},
+    {"category": "Utility News", "source": "NEEP",                               "query": "NEEP northeast energy efficiency commercial building 2026"},
 ]
 
 
@@ -183,21 +233,27 @@ Here are articles found this week ({WEEK_AGO} to {TODAY}):
 {articles_text}
 
 Instructions:
-1. Include ANY article relevant to: building retrofits, window/facade upgrades, energy efficiency programs, LL97/BERDO compliance, office conversions, utility incentive programs, competitor activity, commercial real estate renovations, building decarbonization
-2. Be INCLUSIVE — if there is any angle for INOVUES, include it
-3. Only skip articles that are 100% unrelated to buildings or energy
-4. For each article write a sharp "INOVUES angle" — what is the business implication in 1-2 sentences
-5. Score 1-10: 10=direct sales lead or urgent action, 7-9=strong opportunity, 4-6=useful intel, 1-3=background awareness
-6. Write one punchy headline summary for the whole digest
-7. You MUST include at least 5 stories — if fewer than 5 are clearly relevant, include the next most relevant ones anyway
+1. Sort every article into EXACTLY one of these 5 categories (use these exact names):
+   - "Competitor Intelligence" - window/glazing/facade competitors, adjacent window tech, industry product news
+   - "Market & Industry News" - building energy, decarbonization, retrofits, green building standards, policy, office conversions
+   - "Commercial Real Estate News" - CRE market trends, vacancy, landlord/owner news, building transactions context
+   - "Deals Announced" - commercial building sales and acquisitions only
+   - "Utility News" - utility rebate programs, incentives, energy rate changes, utility company news
+2. Be INCLUSIVE - if there is any angle for INOVUES, include it. Only skip articles 100% unrelated to buildings or energy.
+3. For each article write a sharp "INOVUES angle" - what is the business implication in 1-2 sentences.
+4. Score 1-10: 10=direct sales lead or urgent action, 7-9=strong opportunity, 4-6=useful intel, 1-3=background awareness.
+5. Write one punchy headline summary for the whole digest.
+6. You MUST include at least 5 stories total across all categories.
+7. Only include categories that have at least 1 story. Omit empty categories entirely.
+8. Use these emojis: Competitor Intelligence=🔍, Market & Industry News=🏗️, Commercial Real Estate News=🏢, Deals Announced=🤝, Utility News=⚡
 
 Return ONLY valid JSON (no markdown fences):
 {{
-  "date": "Week of {WEEK_AGO} — {TODAY}",
+  "date": "Week of {WEEK_AGO} - {TODAY}",
   "headline_summary": "one punchy sentence summarizing the week for INOVUES",
   "categories": [
     {{
-      "name": "category name",
+      "name": "exact category name from the list above",
       "emoji": "emoji",
       "stories": [
         {{
