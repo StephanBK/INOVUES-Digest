@@ -22,7 +22,7 @@ load_dotenv()
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 GMAIL_USER        = os.environ["GMAIL_USER"]
 GMAIL_APP_PASS    = os.environ["GMAIL_APP_PASS"]
-RECIPIENTS        = os.environ.get("RECIPIENTS", GMAIL_USER).split(",")
+RECIPIENTS        = [r.strip() for r in os.environ.get("RECIPIENTS", GMAIL_USER).split(",") if r.strip()]
 
 TODAY    = datetime.now().strftime("%B %d, %Y")
 WEEK_AGO = (datetime.now() - timedelta(days=7)).strftime("%B %d, %Y")
