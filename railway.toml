@@ -3,4 +3,3 @@ builder = "nixpacks"
 
 [deploy]
 startCommand = "python digest.py"
-cronSchedule = "58 17 * * *"
