@@ -116,28 +116,54 @@ SEARCH_QUERIES = [
 ]
 
 
-def search_with_claude(query: str) -> list[dict]:
-    """Use Claude with web_search tool. Robustly parse whatever comes back."""
-    try:
+def anthropic_post(payload: dict, timeout: int = 60, max_retries: int = 4) -> requests.Response:
+    """POST to the Anthropic Messages API with 429 backoff and error-body logging.
+
+    On a 429 it waits (increasing) and retries. On any other 4xx/5xx it prints the
+    real error body (the API tells you exactly what's wrong, e.g. 'prompt is too long')
+    then raises, instead of swallowing it.
+    """
+    last = None
+    for attempt in range(max_retries):
         r = requests.post(
             "https://api.anthropic.com/v1/messages",
             headers={
                 "x-api-key": ANTHROPIC_API_KEY,
                 "anthropic-version": "2023-06-01",
-                "content-type": "application/json"
+                "content-type": "application/json",
             },
-            json={
-                "model": "claude-haiku-4-5",
-                "max_tokens": 1500,
-                "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                "messages": [{
-                    "role": "user",
-                    "content": f"Search the web for: {query}\n\nIMPORTANT: Only include results published within the last 7 days (after {WEEK_AGO}). Skip anything older.\n\nList the top 3-4 recent results as a JSON array with fields: title, url, snippet. Return ONLY the JSON array, nothing else."
-                }]
-            },
-            timeout=45
+            json=payload,
+            timeout=timeout,
         )
-        r.raise_for_status()
+        if r.status_code == 429:
+            wait = 20 * (attempt + 1)
+            print(f"    Rate limited (429) — waiting {wait}s (attempt {attempt + 1}/{max_retries})")
+            time.sleep(wait)
+            last = r
+            continue
+        if r.status_code >= 400:
+            print(f"    API error {r.status_code}: {r.text[:800]}")
+            r.raise_for_status()
+        return r
+    # Exhausted retries while still being rate limited
+    print(f"    Still rate limited after {max_retries} attempts.")
+    if last is not None:
+        last.raise_for_status()
+    raise RuntimeError("anthropic_post: no successful response")
+
+
+def search_with_claude(query: str) -> list[dict]:
+    """Use Claude with web_search tool. Robustly parse whatever comes back."""
+    try:
+        r = anthropic_post({
+            "model": "claude-haiku-4-5",
+            "max_tokens": 1500,
+            "tools": [{"type": "web_search_20250305", "name": "web_search"}],
+            "messages": [{
+                "role": "user",
+                "content": f"Search the web for: {query}\n\nIMPORTANT: Only include results published within the last 7 days (after {WEEK_AGO}). Skip anything older.\n\nList the top 3-4 recent results as a JSON array with fields: title, url, snippet. Return ONLY the JSON array, nothing else."
+            }]
+        }, timeout=45)
         blocks = r.json().get("content", [])
 
         # Try to find a text block with JSON
@@ -214,7 +240,7 @@ def fetch_all() -> list[dict]:
                     "source_name": target["source"],
                     "title":       res.get("title", ""),
                     "url":         url,
-                    "snippet":     res.get("snippet", ""),
+                    "snippet":     (res.get("snippet", "") or "")[:600],
                 })
 
         print(f"    -> {len(results)} results")
@@ -223,6 +249,14 @@ def fetch_all() -> list[dict]:
     return all_articles
 
 def curate_with_claude(articles: list[dict]) -> dict:
+    # Cap inputs so an oversized snippet can't push the prompt past the model
+    # context limit — that over-length request was the silent 400 that crashed the bot.
+    capped = []
+    for a in articles[:60]:
+        a = dict(a)
+        a["snippet"] = (a.get("snippet", "") or "")[:600]
+        capped.append(a)
+    articles = capped
     articles_text = json.dumps(articles, indent=2)
 
     prompt = f"""You are the intelligence analyst for INOVUES.
@@ -268,24 +302,10 @@ Return ONLY valid JSON (no markdown fences):
   ]
 }}"""
 
-    for attempt in range(3):
-        try:
-            r = requests.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-                json={"model": "claude-haiku-4-5", "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]},
-                timeout=90
-            )
-            if r.status_code == 429:
-                print(f"  Rate limited, waiting 30s... (attempt {attempt+1}/3)")
-                time.sleep(30)
-                continue
-            r.raise_for_status()
-            break
-        except Exception as e:
-            if attempt == 2:
-                raise
-            time.sleep(30)
+    r = anthropic_post(
+        {"model": "claude-haiku-4-5", "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]},
+        timeout=90,
+    )
     content = r.json()["content"][0]["text"].strip()
     
     def try_parse(s):
@@ -448,6 +468,37 @@ def send_email(html: str, subject: str):
     print(f"✅ Sent to {', '.join(RECIPIENTS)}")
 
 
+def build_fallback_digest(articles: list[dict]) -> dict:
+    """If AI curation fails, still deliver the raw articles grouped by category
+    so recipients always get the week's findings instead of nothing."""
+    emojis = {
+        "Competitor Intelligence": "🔍",
+        "Market & Industry News": "🏗️",
+        "Commercial Real Estate News": "🏢",
+        "Deals Announced": "🤝",
+        "Utility News": "⚡",
+    }
+    by_cat: dict[str, list] = {}
+    for a in articles:
+        cat = a.get("category", "Market & Industry News")
+        by_cat.setdefault(cat, []).append({
+            "source_name": a.get("source_name", ""),
+            "title": a.get("title", ""),
+            "url": a.get("url", ""),
+            "insight": (a.get("snippet", "") or "")[:200],
+            "score": 5,
+        })
+    categories = [
+        {"name": cat, "emoji": emojis.get(cat, "📰"), "stories": stories}
+        for cat, stories in by_cat.items() if stories
+    ]
+    return {
+        "date": f"Week of {WEEK_AGO} — {TODAY}",
+        "headline_summary": "Automated curation was unavailable this week — raw findings below.",
+        "categories": categories,
+    }
+
+
 def main():
     print(f"🏢 INOVUES Weekly Digest — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print(f"📅 Covering: {WEEK_AGO} → {TODAY}")
@@ -455,7 +506,11 @@ def main():
     articles = fetch_all()
 
     print("\n🤖 Curating with Claude...")
-    digest = curate_with_claude(articles)
+    try:
+        digest = curate_with_claude(articles)
+    except Exception as e:
+        print(f"⚠ Curation failed ({e}) — sending raw fallback digest so recipients still get the news.")
+        digest = build_fallback_digest(articles)
     total  = sum(len(c.get("stories", [])) for c in digest.get("categories", []))
     print(f"   → {total} stories selected")
 
