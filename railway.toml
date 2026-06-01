@@ -3,3 +3,5 @@ builder = "nixpacks"
 
 [deploy]
 startCommand = "python digest.py"
+
+# one-off manual run 181058
